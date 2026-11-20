@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- WHY: descriptive, unique title = SC 2.4.2 Page Titled. -->
+<title>A11y Lab – WCAG 2.1 AA learning and testing tool</title>
+<style>
+/* WHY tokens: every color pair below was chosen to give >=4.5:1 (text) / >=3:1 (UI) in all three themes. */
+:root {
+  --bg:#fff;
+  --fg:#1a1a1a;
+  --mut:#4a4a4a;
+  --ac:#0b5cad;
+  --acfg:#fff;
+  --bd:#6b6b6b;
+  --sf:#f1f3f5;
+  --ok:#0a6b2d;
+  --bad:#b00020;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px)
+}
+
+@media(prefers-color-scheme:dark) {
+  :root:not([data-theme]) {
+  --bg:#121212;
+  --fg:#ececec;
+  --mut:#b8b8b8;
+  --ac:#8ab4f8;
+  --acfg:#0a0a0a;
+  --bd:#8d8d8d;
+  --sf:#1f1f1f;
+  --ok:#6fdc8c;
+  --bad:#ff8a95;
+  color-scheme:dark
+}
+
+}
+
+:root[data-theme=dark] {
+  --bg:#121212;
+  --fg:#ececec;
+  --mut:#b8b8b8;
+  --ac:#8ab4f8;
+  --acfg:#0a0a0a;
+  --bd:#8d8d8d;
+  --sf:#1f1f1f;
+  --ok:#6fdc8c;
+  --bad:#ff8a95;
+  color-scheme:dark
+}
+
+:root[data-theme=hc] {
+  --bg:#000;
+  --fg:#fff;
+  --mut:#fff;
+  --ac:#ff0;
+  --acfg:#000;
+  --bd:#fff;
+  --sf:#000;
+  --ok:#0f0;
+  --bad:#ff8080;
+  color-scheme:dark
+}
+
+*,*::before,*::after {
+  box-sizing:border-box
+}
+
+[hidden] {
+  display:none!important
+}
+
+body {
+  margin:0;
+  font:1rem/1.5 system-ui,Arial,sans-serif;
+  background:var(--bg);
+  color:var(--fg)
+}
+
+/* WHY: rem units + wrapping = reflow at 320px / 200% zoom (SC 1.4.4, 1.4.10). */
+.wrap {
+  max-width:70rem;
+  margin:0 auto;
+  padding:0 1rem
+}
+
+h1 {
+  font-size:1.6rem;
+  margin:.5rem 0
+}
+h2 {
+  font-size:1.35rem
+}
+h3 {
+  font-size:1.1rem;
+  margin:.2rem 0
+}
+h4 {
+  font-size:1rem;
+  margin:.4rem 0
+}
+
+a {
+  color:var(--ac)
+}
+
+/* WHY: visible focus (SC 2.4.7). Never outline:none without replacement. */
+:focus-visible {
+  outline:3px solid var(--ac);
+  outline-offset:3px
+}
+
+button,select,input,textarea,summary {
+  font:inherit;
+  color:var(--fg)
+}
+
+button,.btn {
+  min-height:2.75rem;
+  min-width:2.75rem;
+  padding:.4rem .9rem;
+  background:var(--ac);
+  color:var(--acfg);
+  border:2px solid var(--ac);
+  border-radius:.4rem;
+  cursor:pointer
+}
+
+button.sec {
+  background:var(--bg);
+  color:var(--fg);
+  border-color:var(--bd)
+}
+
+input:not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea {
+  min-height:2.75rem;
+  padding:.3rem .5rem;
+  background:var(--bg);
+  border:2px solid var(--bd);
+  border-radius:.3rem;
+  max-width:100%
+}
+
+input[type=color] {
+  padding:.1rem;
+  width:3.5rem
+}
+
+input[type=checkbox],input[type=radio] {
+  width:1.4rem;
+  height:1.4rem;
+  vertical-align:middle
+}
+
+input[aria-invalid=true] {
+  border-color:var(--bad)
+}
+
+.skip {
+  position:absolute;
+  left:.5rem;
+  top:-4rem;
+  background:var(--bg);
+  color:var(--fg);
+  border:3px solid var(--ac);
+  padding:.6rem 1rem;
+  z-index:99
+}
+
+.skip:focus {
+  top:.5rem
+}
+
+header {
+  background:var(--sf);
+  border-bottom:2px solid var(--bd);
+  padding:.5rem 0
+}
+
+.hrow {
+  display:flex;
+  flex-wrap:wrap;
+  gap:1rem;
+  align-items:center;
+  justify-content:space-between
+}
+
+[role=tablist] {
+  display:flex;
+  flex-wrap:wrap;
+  gap:.25rem;
+  margin:.5rem 0
+}
+
+[role=tab] {
+  background:var(--bg);
+  color:var(--fg);
+  border-color:var(--bd)
+}
+
+/* WHY: selection shown by border+weight+underline, not color alone (SC 1.4.1). */
+[role=tab][aria-selected=true] {
+  background:var(--ac);
+  color:var(--acfg);
+  border-color:var(--ac);
+  font-weight:700;
+  text-decoration:underline
+}
+
+.card {
+  border:2px solid var(--bd);
+  border-radius:.5rem;
+  padding:1rem;
+  margin:1rem 0;
+  background:var(--sf)
+}
+
+.meta {
+  color:var(--mut);
+  margin:.3rem 0;
+  font-size:.95rem
+}
+
+.row {
+  display:flex;
+  flex-wrap:wrap;
+  gap:.75rem;
+  align-items:end;
+  margin:.5rem 0
+}
+
+.row label {
+  display:flex;
+  flex-direction:column;
+  gap:.2rem
+}
+
+.grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,18rem),1fr));
+  gap:1rem
+}
+
+table {
+  border-collapse:collapse;
+  max-width:100%
+}
+th,td {
+  border:1px solid var(--bd);
+  padding:.4rem .6rem;
+  text-align:left
+}
+
+.tw {
+  overflow-x:auto
+}
+
+pre {
+  background:var(--bg);
+  border:1px solid var(--bd);
+  padding:.5rem;
+  overflow-x:auto;
+  white-space:pre-wrap;
+  word-break:break-word;
+  margin:.3rem 0
+}
+
+.log {
+  background:var(--bg);
+  border:2px solid var(--bd);
+  padding:.5rem;
+  height:9rem;
+  overflow:auto;
+  white-space:pre-wrap;
+  font:.9rem/1.4 monospace
+}
+
+.pass {
+  color:var(--ok);
+  font-weight:700
+}
+.fail {
+  color:var(--bad);
+  font-weight:700
+}
+
+.err {
+  border:2px solid var(--bad);
+  padding:.5rem;
+  margin:.5rem 0;
+  background:var(--bg)
+}
+
+.toast {
+  border-left:.5rem solid var(--ac);
+  background:var(--bg);
+  padding:.5rem 1rem;
+  margin:.5rem 0;
+  min-height:2.5rem
+}
+
+#dlg {
+  position:fixed;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  width:min(92vw,28rem);
+  background:var(--bg);
+  border:3px solid var(--ac);
+  padding:1rem;
+  z-index:100
+}
+
+#bk {
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.6);
+  z-index:90
+}
+
+[role=menu] {
+  position:absolute;
+  background:var(--bg);
+  border:2px solid var(--bd);
+  padding:.25rem;
+  z-index:5;
+  display:flex;
+  flex-direction:column;
+  min-width:10rem
+}
+
+[role=menu] button {
+  background:var(--bg);
+  color:var(--fg);
+  border-color:transparent;
+  text-align:left
+}
+
+th button {
+  background:transparent;
+  color:var(--fg);
+  border:0;
+  min-height:2.75rem;
+  font-weight:700
+}
+
+th[aria-sort=ascending] button::after {
+  content:" ▲"
+}
+th[aria-sort=descending] button::after {
+  content:" ▼"
+}
+
+/* Inspector: inset ring so it never replaces the focus outline. */
+.insp :is(button,a,input,select,textarea,[role],th) {
+  box-shadow:inset 0 0 0 2px var(--bad)
+}
+
+.stage {
+  border:2px solid var(--bd);
+  height:460px;
+  overflow:auto;
+  position:relative;
+  background:var(--sf)
+}
+
+#sz {
+  position:relative
+}
+
+#fr {
+  border:0;
+  background:#fff;
+  display:block
+}
+
+#lens {
+  position:absolute;
+  width:160px;
+  height:160px;
+  border:3px solid var(--ac);
+  border-radius:50%;
+  overflow:hidden;
+  pointer-events:none;
+  background:#fff
+}
+
+#lf {
+  position:absolute;
+  border:0;
+  background:#fff
+}
+
+#ov {
+  position:absolute;
+  inset:0;
+  cursor:crosshair
+}
+
+.fr3 {
+  width:100%;
+  height:30rem;
+  border:2px solid var(--bd);
+  background:#fff
+}
+
+details {
+  border:1px solid var(--bd);
+  margin:.4rem 0;
+  padding:.3rem .6rem;
+  background:var(--bg)
+}
+
+summary {
+  cursor:pointer;
+  min-height:2.75rem;
+  display:flex;
+  align-items:center
+}
+
+fieldset {
+  border:1px solid var(--bd);
+  margin:.5rem 0
+}
+
+.sw {
+  display:inline-block;
+  width:1.5rem;
+  height:1.5rem;
+  border:2px solid var(--fg);
+  vertical-align:middle
+}
+
+footer {
+  border-top:2px solid var(--bd);
+  margin-top:2rem;
+  padding:1rem 0;
+  color:var(--mut)
+}
+
+@media(prefers-reduced-motion:reduce) {
+  * {
+  animation:none!important;
+  transition:none!important;
+  scroll-behavior:auto!important
+}
+
+}
+
+@media print {
+  header,nav,footer,.np,.skip {
+  display:none!important
+}
+body {
+  background:#fff;
+  color:#000
+}
+
+}
+
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to main content</a>
+<!-- WHY: hidden SVG filters for the color-blindness simulation; aria-hidden so AT ignores it. -->
+<svg width="0" height="0" aria-hidden="true" focusable="false" style="position:absolute"><defs>
+<filter id="protanopia" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values=".567 .433 0 0 0 .558 .442 0 0 0 0 .242 .758 0 0 0 0 0 1 0"/></filter>
+<filter id="deuteranopia" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values=".625 .375 0 0 0 .7 .3 0 0 0 0 .3 .7 0 0 0 0 0 1 0"/></filter>
+<filter id="tritanopia" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values=".95 .05 0 0 0 0 .433 .567 0 0 0 .475 .525 0 0 0 0 0 1 0"/></filter>
+<filter id="achromatopsia" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values=".299 .587 .114 0 0 .299 .587 .114 0 0 .299 .587 .114 0 0 0 0 0 1 0"/></filter>
+</defs></svg>
+
+<header><div class="wrap hrow">
+<h1>A11y Lab</h1>
+<!-- WHY: native <select> + visible <label>: accessible by default, no ARIA needed. -->
+<div><label for="theme">Theme </label><select id="theme"><option value="auto">System default</option><option value="light">Light</option><option value="dark">Dark</option><option value="hc">High contrast</option></select></div>
+</div></header>
+
+<div class="wrap">
+<nav aria-label="Lab modules" data-tabs id="mainnav">
+<div role="tablist" aria-label="Lab modules">
+<button role="tab" id="t1" aria-controls="m1" aria-selected="true">1 Keyboard &amp; screen reader</button>
+<button role="tab" id="t2" aria-controls="m2" aria-selected="false" tabindex="-1">2 Contrast &amp; magnification</button>
+<button role="tab" id="t3" aria-controls="m3" aria-selected="false" tabindex="-1">3 Remediation workshop</button>
+<button role="tab" id="t4" aria-controls="m4" aria-selected="false" tabindex="-1">4 Audit &amp; checklist</button>
+</div></nav>
+
+<!-- tabindex=-1 on main: the skip link needs a focusable target in all browsers (SC 2.4.1). -->
+<p class="meta">An educational lab covering selected WCAG 2.1 criteria. Simulations and automated checks support, but do not replace, manual testing.</p>
+<div id="status" class="toast" role="status" aria-atomic="true"></div>
+<main id="main" tabindex="-1">
+
+<!-- ============ MODULE 1 ============ -->
+<section id="m1" role="tabpanel" aria-labelledby="t1" tabindex="0">
+<h2>Module 1: Keyboard &amp; screen reader lab</h2>
+<p>Each card lists what to test and the ARIA used. Prefer native elements; ARIA is added only where HTML has no equivalent.</p>
+<div class="card"><label><input type="checkbox" id="insp"> ARIA Inspector (hover or focus a control to see its estimated role, name and ARIA attributes)</label>
+<p class="meta">Inspector results are simplified estimates, not the browser accessibility tree.</p><div id="io" class="meta" hidden></div></div>
+
+<div class="card"><h3>Event log (focus order, SC 2.4.3)</h3>
+<p class="meta">Shows keys pressed and the focused element's tag, role and accessible name. Not a live region on purpose: constant updates would flood screen readers.</p>
+<div id="klog" class="log" role="log" aria-live="off" tabindex="0" aria-label="Keyboard event log"></div></div>
+
+<div class="card"><h3>Skip link (SC 2.4.1)</h3>
+<p class="meta"><strong>Test:</strong> reload, press Tab once: "Skip to main content" appears; Enter moves focus to main.</p>
+<p class="meta"><strong>Used:</strong> native link to #main, visible on :focus.</p></div>
+
+<div class="card"><h3>Tabs</h3>
+<p class="meta"><strong>Test:</strong> Tab into the tab list, then Left/Right/Home/End. Tab again moves into the panel.</p>
+<p class="meta"><strong>ARIA:</strong> role=tablist/tab/tabpanel, aria-selected, aria-controls, aria-labelledby, roving tabindex.</p>
+<div data-tabs><div role="tablist" aria-label="Demo tabs">
+<button role="tab" id="dt1" aria-controls="dp1">Overview</button><button role="tab" id="dt2" aria-controls="dp2">Details</button><button role="tab" id="dt3" aria-controls="dp3">Reviews</button></div>
+<div role="tabpanel" id="dp1" aria-labelledby="dt1" tabindex="0">Overview content.</div>
+<div role="tabpanel" id="dp2" aria-labelledby="dt2" tabindex="0" hidden>Details content.</div>
+<div role="tabpanel" id="dp3" aria-labelledby="dt3" tabindex="0" hidden>Reviews content.</div></div></div>
+
+<div class="card"><h3>Accordion</h3>
+<p class="meta"><strong>Test:</strong> Tab to a heading button; Enter or Space toggles.</p>
+<p class="meta"><strong>ARIA:</strong> aria-expanded, aria-controls on a native button inside a heading.</p>
+<div class="acc">
+<h4><button class="sec" id="ab1" aria-expanded="false" aria-controls="ap1">What is WCAG?</button></h4><div id="ap1" role="region" aria-labelledby="ab1" hidden>Web Content Accessibility Guidelines, published by W3C.</div>
+<h4><button class="sec" id="ab2" aria-expanded="false" aria-controls="ap2">What is level AA?</button></h4><div id="ap2" role="region" aria-labelledby="ab2" hidden>The mid conformance level most laws and policies target.</div></div></div>
+
+<div class="card"><h3>Modal dialog</h3>
+<p class="meta"><strong>Test:</strong> open it, Tab around (focus stays inside), Esc closes, focus returns to this button.</p>
+<p class="meta"><strong>ARIA:</strong> role=dialog, aria-modal, aria-labelledby, aria-describedby; background set inert.</p>
+<button id="od">Open dialog</button></div>
+
+<div class="card"><h3>Menu button</h3>
+<p class="meta"><strong>Test:</strong> Enter/Space/Down opens; Up/Down/Home/End move; Esc closes and returns focus.</p>
+<p class="meta"><strong>ARIA:</strong> aria-haspopup=menu, aria-expanded, role=menu/menuitem.</p>
+<div style="position:relative;display:inline-block"><button id="mb" aria-haspopup="menu" aria-expanded="false" aria-controls="mn">Actions ▾</button>
+<div id="mn" role="menu" aria-labelledby="mb" hidden><button role="menuitem" tabindex="-1">Copy</button><button role="menuitem" tabindex="-1">Rename</button><button role="menuitem" tabindex="-1">Delete</button></div></div></div>
+
+<div class="card"><h3>Form with validation (SC 3.3.1, 3.3.2)</h3>
+<p class="meta"><strong>Test:</strong> submit empty. Focus jumps to the error summary; its links focus each field.</p>
+<p class="meta"><strong>ARIA:</strong> aria-required, aria-invalid, aria-describedby; native labels; status live region below.</p>
+<form id="fm" novalidate>
+<div class="row"><label for="n">Name (required)<input id="n" aria-required="true" aria-invalid="false" aria-describedby="nh ne" autocomplete="name"></label><span id="nh" class="meta">Your full name.</span><span id="ne" class="fail"></span></div>
+<div class="row"><label for="em">Email (required)<input id="em" type="email" aria-required="true" aria-invalid="false" aria-describedby="eh ee" autocomplete="email"></label><span id="eh" class="meta">Example: name@example.com</span><span id="ee" class="fail"></span></div>
+<div id="es" class="err" tabindex="-1" hidden></div>
+<button type="submit">Submit</button></form></div>
+
+<div class="card"><h3>Toast / status message (SC 4.1.3)</h3>
+<p class="meta"><strong>Test:</strong> with a screen reader on, press the button; it announces without moving focus.</p>
+<p class="meta"><strong>ARIA:</strong> role=status (implicit aria-live=polite).</p>
+<button id="tb">Show status</button><div id="demo-status" class="toast"></div></div>
+
+<div class="card"><h3>Sortable data table</h3>
+<p class="meta"><strong>Test:</strong> activate a column button; aria-sort updates and the change is announced.</p>
+<p class="meta"><strong>ARIA:</strong> caption, th scope=col, aria-sort on the sorted th only.</p>
+<div class="tw"><table><caption>Team members (sortable)</caption><thead><tr>
+<th scope="col"><button class="sec" data-k="0">Name</button></th><th scope="col"><button class="sec" data-k="1">Role</button></th><th scope="col"><button class="sec" data-k="2">Years</button></th></tr></thead><tbody id="tbd"></tbody></table></div></div>
+</section>
+
+<!-- ============ MODULE 2 ============ -->
+<section id="m2" role="tabpanel" aria-labelledby="t2" tabindex="0" hidden>
+<h2>Module 2: Contrast &amp; magnification tester</h2>
+<div class="card"><h3>Contrast checker</h3>
+<div class="row">
+<label for="fc">Text color picker<input type="color" id="fc" value="#767676"></label>
+<label for="fh">Text color hex<input id="fh" value="#767676" maxlength="7" size="9" aria-describedby="cerr"></label>
+<label for="bc">Background picker<input type="color" id="bc" value="#ffffff"></label>
+<label for="bh">Background hex<input id="bh" value="#ffffff" maxlength="7" size="9" aria-describedby="cerr"></label>
+<label for="fs">Font size (px)<input id="fs" type="number" min="8" max="96" value="16" style="width:6rem"></label>
+<label><span><input type="checkbox" id="fb"> Bold</span></label></div>
+<p id="cerr" class="fail"></p>
+<p>Ratio: <strong id="cr"></strong>. This sample counts as <strong id="lg"></strong>.</p>
+<div id="prev" style="padding:1rem;border:2px solid var(--bd)">Preview: The quick brown fox jumps over the lazy dog.</div>
+<div class="tw"><table><caption>WCAG 2.1 results</caption><thead><tr><th scope="col">Criterion</th><th scope="col">Needs</th><th scope="col">Result</th></tr></thead><tbody id="ct"></tbody></table></div>
+<p class="meta">Large text = at least 24px regular or 18.66px (14pt) bold. Contrast uses the WCAG relative luminance formula; ratios are truncated, never rounded up.</p>
+<div class="row"><label for="tg">Target<select id="tg"><option value="4.5">4.5:1 (AA text)</option><option value="3">3:1 (large text / UI)</option><option value="7">7:1 (AAA text)</option></select></label><button id="sg">Suggest nearest passing text color</button></div>
+<div id="sug" role="status"></div></div>
+
+<div class="card"><h3>Page scanner</h3>
+<p class="meta">Scans only the built-in Before and After sample pages (Module 3) using computed colors. Checks text contrast only (1.4.3); it does not measure borders, images, transparency blending, or arbitrary websites.</p>
+<button id="sc">Scan sample UI</button><div id="sres" class="tw" aria-live="polite"></div></div>
+
+<div class="card"><h3>Sample UI under test</h3>
+<div class="row"><label for="src">Version<select id="src"><option>Before</option><option>After</option></select></label>
+<label for="cb">Color-blindness<select id="cb"><option value="">None</option><option value="protanopia">Protanopia</option><option value="deuteranopia">Deuteranopia</option><option value="tritanopia">Tritanopia</option><option value="achromatopsia">Achromatopsia</option></select></label>
+<label for="zoom">Zoom: <span id="zo">100%</span><input type="range" id="zoom" min="100" max="400" step="25" value="100"></label></div>
+<div class="row"><label><span><input type="checkbox" id="rf"> Reflow test: 320 CSS px wide (SC 1.4.10)</span></label>
+<label><span><input type="checkbox" id="ts"> Text spacing (SC 1.4.12)</span></label>
+<label><span><input type="checkbox" id="ln"> Lens magnifier</span></label></div>
+<p class="meta">Zoom emulates browser zoom: the page's CSS width shrinks as zoom grows (SC 1.4.4: 200% with no loss of content or function). Lens: focus the overlay, arrows move, + / - change magnification; it does not follow scrolling inside the page and blocks clicks while on.</p>
+<p id="mres" role="status" class="fail" style="color:var(--fg)"></p>
+<div class="stage" id="stage"><div id="sz"><iframe id="fr" title="Sample UI under test"></iframe>
+<div id="lens" hidden aria-hidden="true"><iframe id="lf" tabindex="-1" title="Magnified copy"></iframe></div>
+<div id="ov" hidden tabindex="0" role="group" aria-label="Lens magnifier control" aria-describedby="ovd"></div></div></div>
+<p id="ovd" class="meta">Arrow keys move the lens. Plus and minus change magnification.</p>
+<p class="meta"><strong>This is a simulation.</strong> Also test with the OS magnifier, real browser zoom, and NVDA, JAWS or VoiceOver.</p></div>
+</section>
+
+<!-- ============ MODULE 3 ============ -->
+<section id="m3" role="tabpanel" aria-labelledby="t3" tabindex="0" hidden>
+<h2>Module 3: WCAG 2.1 remediation workshop</h2>
+<p>Find the failures in "Before", then compare with "After". The Before page contains an intentional keyboard trap in the promo field: <strong>press Escape to leave it</strong>. Positive tabindex and missing lang/title live inside the sample page's own document (an iframe), so they don't affect this app.</p>
+<fieldset><legend>View</legend>
+<label><input type="radio" name="vw" value="b" checked> Before</label>
+<label><input type="radio" name="vw" value="a"> After</label>
+<label><input type="radio" name="vw" value="s"> Side by side</label></fieldset>
+<div class="grid"><div id="wb"><h3>Before</h3><iframe id="fb3" class="fr3" title="Before: inaccessible sample page"></iframe></div>
+<div id="wa" hidden><h3>After</h3><iframe id="fa3" class="fr3" title="After: remediated sample page"></iframe></div></div>
+<h3>Issue tracker</h3>
+<p id="prog" role="status"></p>
+<div id="iss"></div>
+</section>
+
+<!-- ============ MODULE 4 ============ -->
+<section id="m4" role="tabpanel" aria-labelledby="t4" tabindex="0" hidden>
+<h2>Module 4: Audit report &amp; checklist</h2>
+<div class="np"><h3>Test-method guide</h3>
+<details><summary>Keyboard-only</summary><p>Unplug the mouse. Tab/Shift+Tab through everything: is focus visible, logical, never trapped? Do Enter, Space, arrows and Esc work as expected?</p></details>
+<details><summary>Screen readers</summary><p>NVDA with Firefox or Chrome (Windows), VoiceOver with Safari (macOS/iOS), TalkBack (Android). Check names, roles, states, headings, landmarks and announcements of dynamic changes.</p></details>
+<details><summary>Zoom and magnification</summary><p>Zoom the browser to 200% and 400% (320 CSS px), check no clipped content or sideways scrolling; apply text-spacing overrides; try the OS magnifier.</p></details>
+<details><summary>Contrast tools</summary><p>Color pickers and contrast checkers (e.g. browser DevTools, Colour Contrast Analyser) for text, borders and icons; also check hover, focus and disabled-adjacent states.</p></details>
+<details><summary>Automated tools</summary><p>axe DevTools, Lighthouse and WAVE are quick starting points. <strong>Automated tools detect only a portion of WCAG issues (commonly estimated at roughly a third); manual and assistive-technology testing is required.</strong></p></details></div>
+<h3>Selected WCAG 2.1 A/AA checklist</h3><p class="meta">This checklist covers selected criteria, not every WCAG requirement. A report records your tests; it is not a certification.</p><p id="save-note" class="meta">Progress and notes are saved only in this browser when storage is available. Avoid entering sensitive information.</p><button id="reset-progress" class="sec" type="button">Reset saved progress</button><div id="ck"></div>
+<p class="np"><button id="gr">Generate report</button> <button id="cp" class="sec">Copy report as text</button> <button id="pr" class="sec">Print</button></p>
+<div id="rep" aria-live="polite"></div>
+</section>
+</main>
+</div>
+
+<div id="bk" hidden></div>
+<div id="dlg" role="dialog" aria-modal="true" aria-labelledby="dtt" aria-describedby="dds" hidden>
+<h2 id="dtt">Confirm action</h2><p id="dds">Focus is trapped here. Press Escape to close.</p>
+<button id="dok">Confirm</button> <button id="dcl" class="sec">Cancel</button></div>
+
+<footer><div class="wrap">A11y Lab is a teaching aid. It does not replace testing with real assistive technology.</div></footer>
+
+<script>
+const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
+/* WHY: clear then set: assistive tech reliably re-announces repeated messages (SC 4.1.3). */
+let announcementTimer;
+const say = message => {
+ clearTimeout(announcementTimer);
+ $('#status').textContent = '';
+ if (!$('#m1').hidden) $('#demo-status').textContent = message;
+ announcementTimer = setTimeout(() => { $('#status').textContent = message; }, 60);
+};
+
+/* THEME: default follows prefers-color-scheme (CSS); explicit choice sets data-theme. */
+$('#theme').onchange=e=>{const v=e.target.value,r=document.documentElement;v==='auto'?r.removeAttribute('data-theme'):r.setAttribute('data-theme',v)};
+
+/* TABS (APG): roving tabindex, arrows/Home/End. Only tabs belonging to this tablist root are handled. */
+function tabs(root){const t=$$('[role=tab]',root).filter(x=>x.closest('[data-tabs]')===root);
+ const sel=(i,f)=>t.forEach((b,j)=>{const on=i===j;b.setAttribute('aria-selected',on);b.tabIndex=on?0:-1;document.getElementById(b.getAttribute('aria-controls')).hidden=!on;if(on&&f)b.focus();if(on&&b.id==='t2')requestAnimationFrame(layout)});
+ t.forEach((b,i)=>{b.onclick=()=>sel(i);b.onkeydown=e=>{const k={ArrowRight:(i+1)%t.length,ArrowLeft:(i-1+t.length)%t.length,Home:0,End:t.length-1}[e.key];if(k!==undefined){e.preventDefault();sel(k,1)}}});sel(0)}
+$$('[data-tabs]').forEach(tabs);
+
+/* ACCORDION: native button handles Enter/Space; we only sync aria-expanded and hidden. */
+$$('.acc button').forEach(b=>b.onclick=()=>{const o=b.getAttribute('aria-expanded')==='true';b.setAttribute('aria-expanded',!o);document.getElementById(b.getAttribute('aria-controls')).hidden=o});
+
+/* MODAL: inert on everything else + manual Tab loop (inert alone doesn't wrap focus). */
+let opener;const dlg=$('#dlg');
+const bgEls=()=>$$('body>:not(#dlg):not(#bk):not(script)');
+function openD(){opener=document.activeElement;bgEls().forEach(e=>e.inert=true);$('#bk').hidden=dlg.hidden=false;$('#dok').focus()}
+function closeD(){bgEls().forEach(e=>e.inert=false);$('#bk').hidden=dlg.hidden=true;opener&&opener.focus()}
+$('#od').onclick=openD;$('#dcl').onclick=closeD;$('#dok').onclick=()=>{closeD();say('Action confirmed')};
+dlg.onkeydown=e=>{if(e.key==='Escape')closeD();if(e.key==='Tab'){const f=$$('button',dlg),a=f[0],z=f[f.length-1];if(e.shiftKey&&document.activeElement===a){e.preventDefault();z.focus()}else if(!e.shiftKey&&document.activeElement===z){e.preventDefault();a.focus()}}};
+
+/* MENU BUTTON (APG): focus moves into menu on open; Esc returns focus to the button. */
+const mb=$('#mb'),mn=$('#mn'),mi=$$('[role=menuitem]',mn);
+const om=i=>{mn.hidden=false;mb.setAttribute('aria-expanded','true');mi[i].focus()};
+const cm=f=>{mn.hidden=true;mb.setAttribute('aria-expanded','false');if(f)mb.focus()};
+mb.onclick=()=>mn.hidden?om(0):cm();
+mb.onkeydown=e=>{if(e.key==='ArrowDown'){e.preventDefault();om(0)}if(e.key==='ArrowUp'){e.preventDefault();om(mi.length-1)}};
+mn.onkeydown=e=>{const i=mi.indexOf(document.activeElement),k={ArrowDown:(i+1)%mi.length,ArrowUp:(i-1+mi.length)%mi.length,Home:0,End:mi.length-1}[e.key];
+ if(k!==undefined){e.preventDefault();mi[k].focus()}else if(e.key==='Escape'){e.preventDefault();cm(1)}else if(e.key==='Tab')cm()};
+mi.forEach(b=>b.onclick=()=>{say('Selected: '+b.textContent);cm(1)});
+document.addEventListener('click',e=>{if(!mn.hidden&&!e.target.closest('#mn,#mb'))cm()});
+
+/* FORM: errors are text (not color alone), tied by aria-describedby; summary takes focus so SR users hear all errors. */
+$('#fm').onsubmit=e=>{e.preventDefault();const errs=[];
+ [['n',v=>v.trim(),'Name is required'],['em',v=>/^\S+@\S+\.\S+$/.test(v),'Enter a valid email address']].forEach(([id,ok,msg])=>{
+  const bad=!ok($('#'+id).value);$('#'+id).setAttribute('aria-invalid',bad);$('#'+(id==='n'?'ne':'ee')).textContent=bad?'⚠ Error: '+msg:'';if(bad)errs.push([id,msg])});
+ const s=$('#es');
+ if(errs.length){s.hidden=false;s.innerHTML='<h4></h4><ul></ul>';$('h4',s).textContent=errs.length+' error(s) found';
+  errs.forEach(([id,m])=>{const li=document.createElement('li'),a=document.createElement('a');a.href='#'+id;a.textContent=m;a.onclick=ev=>{ev.preventDefault();$('#'+id).focus()};li.append(a);$('ul',s).append(li)});s.focus()}
+ else{s.hidden=true;say('Form submitted successfully')}};
+$('#tb').onclick=()=>say('Settings saved at '+new Date().toLocaleTimeString());
+
+/* TABLE: aria-sort only on the active column (APG sortable table). */
+const rows=[['Aria','Engineer',7],['Bo','Designer',3],['Cy','Tester',5]];let sk=-1,sd=1;
+function draw(){$('#tbd').innerHTML=rows.map(r=>'<tr><th scope="row">'+r[0]+'</th><td>'+r[1]+'</td><td>'+r[2]+'</td></tr>').join('')}draw();
+$$('th button').forEach(b=>b.onclick=()=>{const k=+b.dataset.k;sd=sk===k?-sd:1;sk=k;rows.sort((a,c)=>(a[k]>c[k]?1:-1)*sd);draw();
+ $$('thead th').forEach((t,i)=>i===k?t.setAttribute('aria-sort',sd>0?'ascending':'descending'):t.removeAttribute('aria-sort'));say('Sorted by '+b.textContent+(sd>0?', ascending':', descending'))});
+
+/* EVENT LOG + INSPECTOR: approximate accessible-name computation (teaching aid, not the full accname spec). */
+function nm(e){const l=e.getAttribute('aria-labelledby');if(l)return l.split(' ').map(i=>(document.getElementById(i)||{}).textContent).join(' ').trim();
+ return e.getAttribute('aria-label')||(e.labels&&e.labels[0]&&e.labels[0].textContent.trim())||e.getAttribute('alt')||(e.textContent||'').trim().slice(0,40)||e.title||''}
+function rl(e){const r=e.getAttribute('role');if(r)return r;const m={BUTTON:'button',A:'link',SELECT:'combobox',TEXTAREA:'textbox',TABLE:'table',TH:'columnheader'}[e.tagName];
+ return m||(e.tagName==='INPUT'?({checkbox:'checkbox',radio:'radio',range:'slider'}[e.type]||'textbox'):'')}
+const lg=[];function add(s){lg.push(s);if(lg.length>40)lg.shift();const k=$('#klog');k.textContent=lg.join('\n');k.scrollTop=k.scrollHeight}
+document.addEventListener('keydown',e=>{if(e.target.id!=='klog')add('Key: '+(e.ctrlKey?'Ctrl+':'')+(e.altKey?'Alt+':'')+(e.shiftKey?'Shift+':'')+(e.key===' '?'Space':e.key))});
+document.addEventListener('focusin',e=>{const t=e.target;if(t.id!=='klog')add('Focus → <'+t.tagName.toLowerCase()+'> role='+(rl(t)||'none')+' name="'+nm(t)+'"')});
+$('#insp').onchange=e=>{$('#m1').classList.toggle('insp',e.target.checked);$('#io').hidden=!e.target.checked};
+['mouseover','focusin'].forEach(v=>$('#m1').addEventListener(v,e=>{if(!$('#insp').checked)return;const t=e.target.closest('button,a,input,select,textarea,[role],th');
+ if(!t||t.id==='insp')return;const a=[...t.attributes].filter(x=>/^aria-|^role$|^tabindex$/.test(x.name)).map(x=>x.name+'="'+x.value+'"').join(' ');
+ $('#io').textContent='<'+t.tagName.toLowerCase()+'> name: "'+nm(t)+'" | '+(a||'no ARIA attributes (native semantics)')}));
+
+/* ===== CONTRAST MATH (WCAG 2.x definitions) ===== */
+const lin=c=>{c/=255;return c<=.03928?c/12.92:((c+.055)/1.055)**2.4};
+const lum=c=>.2126*lin(c[0])+.7152*lin(c[1])+.0722*lin(c[2]);
+const ratio=(a,b)=>{const x=lum(a),y=lum(b);return(Math.max(x,y)+.05)/(Math.min(x,y)+.05)};
+const hx=h=>{h=h.trim().replace('#','');if(h.length===3)h=[...h].map(c=>c+c).join('');return/^[0-9a-f]{6}$/i.test(h)?[0,2,4].map(i=>parseInt(h.substr(i,2),16)):null};
+const toHex=c=>'#'+c.map(v=>v.toString(16).padStart(2,'0')).join('');
+const fl2=r=>(Math.floor(r*100)/100).toFixed(2);
+function rgb2hsl([r,g,b]){r/=255;g/=255;b/=255;const M=Math.max(r,g,b),m=Math.min(r,g,b),l=(M+m)/2;let h=0,s=0;if(M!==m){const d=M-m;s=l>.5?d/(2-M-m):d/(M+m);h=M===r?(g-b)/d+(g<b?6:0):M===g?(b-r)/d+2:(r-g)/d+4;h*=60}return[h,s*100,l*100]}
+function hsl2rgb(h,s,l){s/=100;l/=100;const k=n=>(n+h/30)%12,a=s*Math.min(l,1-l),f=n=>l-a*Math.max(-1,Math.min(k(n)-3,9-k(n),1));return[f(0),f(8),f(4)].map(v=>Math.round(v*255))}
+/* Suggest: walk lightness both ways in .5% steps; return the passing color needing the smaller change. */
+function sug(fg,bg,t){const[h,s,l]=rgb2hsl(fg);let best=null;for(const d of[-1,1])for(let L=l;L>=0&&L<=100;L+=d*.5){const c=hsl2rgb(h,s,L);if(ratio(c,bg)>=t){if(!best||Math.abs(L-l)<best.d)best={c,d:Math.abs(L-l)};break}}return best&&best.c}
+
+const rd=(h,p)=>{const v=hx(h.value);h.setAttribute('aria-invalid',!v);return v||hx(p.value)};
+function upd(){const f=rd($('#fh'),$('#fc')),b=rd($('#bh'),$('#bc'));
+ $('#cerr').textContent=(!hx($('#fh').value)||!hx($('#bh').value))?'Error: enter colors as #RGB or #RRGGBB.':'';
+ const r=ratio(f,b),sz=+$('#fs').value||16,bold=$('#fb').checked,large=sz>=24||(bold&&sz>=18.66);
+ $('#cr').textContent=fl2(r)+':1';$('#lg').textContent=large?'large text':'normal text';
+ const p=$('#prev');p.style.color=toHex(f);p.style.background=toHex(b);p.style.fontSize=sz+'px';p.style.fontWeight=bold?700:400;
+ $('#ct').innerHTML=[['Text AA (this size)',large?3:4.5],['Normal text AA (1.4.3)',4.5],['Large text AA (1.4.3)',3],['UI components / graphics AA (1.4.11)',3],['Normal text AAA (1.4.6)',7],['Large text AAA (1.4.6)',4.5]]
+  .map(([n,q])=>'<tr><th scope="row">'+n+'</th><td>'+q+':1</td><td>'+(r>=q?'<span class="pass">✔ Pass</span>':'<span class="fail">✖ Fail</span>')+'</td></tr>').join('')}
+[['fc','fh'],['bc','bh']].forEach(([c,h])=>{$('#'+c).oninput=()=>{$('#'+h).value=$('#'+c).value;upd()};$('#'+h).oninput=()=>{const v=hx($('#'+h).value);if(v)$('#'+c).value=toHex(v);upd()}});
+['fs','fb'].forEach(i=>$('#'+i).oninput=upd);upd();
+$('#sg').onclick=()=>{const f=hx($('#fh').value)||[0,0,0],b=hx($('#bh').value)||[255,255,255],t=+$('#tg').value,c=sug(f,b,t),o=$('#sug');
+ if(!c){o.textContent='No text color reaches '+t+':1 on this background by lightness alone; change the background.';return}
+ o.innerHTML='<span class="sw" style="background:'+toHex(c)+'"></span> Suggested <strong>'+toHex(c)+'</strong> ('+fl2(ratio(c,b))+':1) <button class="sec" id="ap">Apply</button>';
+ $('#ap').onclick=()=>{$('#fh').value=$('#fc').value=toHex(c);upd();$('#fh').focus()}};
+
+/* ===== SAMPLE PAGES (iframes isolate lang, title, tabindex and traps from this app) ===== */
+const P='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+const HERO='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzNjAiIGhlaWdodD0iMTYwIiB2aWV3Qm94PSIwIDAgMzYwIDE2MCI+PHJlY3Qgd2lkdGg9IjM2MCIgaGVpZ2h0PSIxNjAiIGZpbGw9IiNkOGVmZmYiLz48Y2lyY2xlIGN4PSIzMTAiIGN5PSIzMiIgcj0iMTkiIGZpbGw9IiNmZmQxNjYiLz48cGF0aCBkPSJNMCA4NSBROTAgNjUgMTgwIDg1IFQzNjAgODUgVjE2MCBIMFoiIGZpbGw9IiM2NGI1Y2QiLz48cGF0aCBkPSJNMCAxMTIgUTEwMCA5MCAyMTAgMTE2IFQzNjAgMTEwIFYxNjAgSDBaIiBmaWxsPSIjZWFkM2EwIi8+PHBhdGggZD0iTTkwIDg2IEwxMTkgNTkgTDE1MCA3NyBMMTcwIDkxIEwyMzIgMTAyIFEyNTIgMTA0IDI1MiAxMjIgSDg4IFE3MyAxMTUgOTAgODZaIiBmaWxsPSIjMjM0Yjc2IiBzdHJva2U9IiMxNzJmNGQiIHN0cm9rZS13aWR0aD0iNCIvPjxwYXRoIGQ9Ik04NCAxMjIgSDI1MyBWMTMyIEg4NFoiIGZpbGw9IndoaXRlIiBzdHJva2U9IiMxNzJmNGQiIHN0cm9rZS13aWR0aD0iMyIvPjxwYXRoIGQ9Ik0xNDUgNzkgTDEzNCA5MyBNMTU5IDg3IEwxNDkgMTAwIE0xNzQgOTQgTDE2NSAxMDciIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iNCIvPjwvc3ZnPg==';
+const BEFORE=`<!DOCTYPE html><html><head><meta charset="utf-8"><style>
+body{font:12px Arial;margin:0;padding:8px;color:#aaa;background:#fff;width:600px}a{color:#9bbbe0}*:focus{outline:none}
+.hd{background:#eee;padding:8px;display:flex;gap:8px;align-items:center}.logo{font-weight:bold;color:#999}
+.card{display:inline-block;width:170px;height:40px;overflow:hidden;border:1px solid #ddd;margin:4px;padding:4px;cursor:pointer}
+input{border:1px solid #ddd;padding:4px;margin:2px}</style></head><body>
+<div class=hd><div class=logo>ShopCo</div><a href=#>click here</a><button><svg width=16 height=16><circle cx=8 cy=8 r=7 fill=#999 /></svg></button></div>
+<img src=${HERO} width=180 height=80><img src=${P} width=120 height=4 alt=decor-line-1.png style="background:#ddd">
+<h1>Summer Sale</h1><h4>Featured</h4>
+<div class=card>Shoes $50 – click to select this item</div><div class=card>Hats $20</div>
+<p id=tk>Deal: 10% off</p>
+<form id=f><input tabindex=3 placeholder=Name><input tabindex=2 id=em placeholder=Email> <button>Send</button><div id=m></div></form>
+<input id=trap placeholder="Promo code (Tab is blocked)">
+<table border=1><tr><td>Item<td>Price<tr><td>Shoes<td>$50</table>
+<script>document.querySelector('.card').addEventListener('click',function(){this.style.background='#ffd'});
+setInterval(function(){document.getElementById('tk').textContent='Deal: '+(5+Math.floor(Math.random()*40))+'% off'},2000);
+document.getElementById('f').addEventListener('submit',function(e){e.preventDefault();document.getElementById('m').textContent='Sent!';document.getElementById('em').style.border='1px solid red'});
+document.getElementById('trap').addEventListener('keydown',function(e){if(e.key==='Tab')e.preventDefault();if(e.key==='Escape')this.blur()});<\/script></body></html>`;
+const AFTER=`<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>ShopCo – Summer Sale</title><meta name="viewport" content="width=device-width,initial-scale=1"><style>
+body{font:1rem/1.5 Arial,sans-serif;margin:0;padding:1rem;color:#1a1a1a;background:#fff;max-width:100%}a{color:#0b4f9c}
+:focus-visible{outline:3px solid #0b5cad;outline-offset:2px}
+.sk{position:absolute;left:0;top:-3rem;background:#fff;padding:.5rem}.sk:focus{top:0}
+nav{background:#eee;padding:.5rem;display:flex;flex-wrap:wrap;gap:.5rem;align-items:center}
+.card{border:2px solid #595959;margin:.5rem 0;padding:.5rem;min-height:4rem}
+input{border:2px solid #595959;padding:.4rem;min-height:2.75rem;max-width:100%}button{min-height:2.75rem;min-width:2.75rem}
+.er{color:#b00020}.tw{overflow-x:auto}</style></head><body>
+<a class=sk href=#main>Skip to main content</a>
+<header><nav aria-label=Main><strong>ShopCo</strong><a href=#offers>View summer sale offers</a><button type=button aria-label="Open cart"><svg aria-hidden=true width=16 height=16><circle cx=8 cy=8 r=7 fill=#333 /></svg></button></nav></header>
+<main id=main><img src=${HERO} width=360 height=160 alt="Illustration of a blue shoe on a sunny beach" style="max-width:100%;height:auto"><img src=${P} width=120 height=4 alt="" style="background:#ddd">
+<h1>Summer Sale</h1><h2 id=offers>Featured</h2>
+<article class=card><h3>Shoes</h3><p>$50</p><button type=button>Add Shoes to cart</button></article>
+<article class=card><h3>Hats</h3><p>$20</p><button type=button>Add Hats to cart</button></article>
+<p id=tk>Deal: 10% off</p><button id=pz type=button aria-pressed=false>Pause offers</button>
+<form id=f novalidate><p><label for=n>Name</label><br><input id=n autocomplete=name></p>
+<p><label for=em>Email</label><br><input id=em type=email aria-describedby=eme autocomplete=email><br><span id=eme class=er></span></p>
+<button>Send</button><div id=m role=status></div></form>
+<p><label for=promo>Promo code</label><br><input id=promo></p>
+<div class=tw><table><caption>Prices</caption><tr><th scope=col>Item</th><th scope=col>Price</th></tr><tr><th scope=row>Shoes</th><td>$50</td></tr></table></div></main>
+<script>var paused=false;setInterval(function(){if(!paused)document.getElementById('tk').textContent='Deal: '+(5+Math.floor(Math.random()*40))+'% off'},2000);
+document.getElementById('pz').addEventListener('click',function(){paused=!paused;this.setAttribute('aria-pressed',paused)});
+document.getElementById('f').addEventListener('submit',function(e){e.preventDefault();var em=document.getElementById('em'),ok=/^\\S+@\\S+\\.\\S+$/.test(em.value);
+em.setAttribute('aria-invalid',!ok);document.getElementById('eme').textContent=ok?'':'⚠ Error: enter a valid email address';document.getElementById('m').textContent=ok?'Message sent':'Please fix the error above';if(!ok)em.focus()});<\/script></body></html>`;
+const SRC={Before:BEFORE,After:AFTER};
+$('#fb3').srcdoc=BEFORE;$('#fa3').srcdoc=AFTER;
+
+/* ===== MAGNIFICATION: emulates browser zoom by shrinking the iframe's CSS width then scaling it up ===== */
+const fr=$('#fr'),zm=$('#zoom');
+function layout(){const z=+zm.value/100,W=$('#stage').clientWidth-4,w=$('#rf').checked?320:Math.floor(W/z),h=Math.floor(460/z);
+ fr.style.cssText='width:'+w+'px;height:'+h+'px;transform:scale('+z+');transform-origin:0 0;'+($('#cb').value?'filter:url(#'+$('#cb').value+')':'');
+ $('#sz').style.cssText='width:'+w*z+'px;height:460px';$('#zo').textContent=zm.value+'%';
+ const d=fr.contentDocument;if(!d||!d.body)return;let s=d.getElementById('tsx');
+ if($('#ts').checked&&!s){s=d.createElement('style');s.id='tsx';s.textContent='*{line-height:1.5!important;letter-spacing:.12em!important;word-spacing:.16em!important}p{margin-bottom:2em!important}';d.head.append(s)}
+ if(!$('#ts').checked&&s)s.remove();
+ setTimeout(()=>{const e=d.documentElement,hs=e.scrollWidth>e.clientWidth+1,w2=d.defaultView;
+  const clip=$$('body *',d).filter(x=>{const o=w2.getComputedStyle(x).overflow;return o!=='visible'&&(x.scrollHeight>x.clientHeight+1||x.scrollWidth>x.clientWidth+1)}).length;
+  $('#mres').textContent=(hs?'✖ Horizontal scrolling at this width (fails reflow SC 1.4.10 / 1.4.4). ':'✔ No horizontal scrolling. ')+(clip?'✖ '+clip+' element(s) clip content.':'✔ No clipped content detected.');lensSync()},120)}
+fr.onload=layout;function setSrc(){fr.srcdoc=SRC[$('#src').value]}
+$('#src').onchange=()=>{setSrc();lensSync()};['zoom','rf','ts','cb'].forEach(i=>$('#'+i).oninput=layout);addEventListener('resize',layout);setSrc();
+/* LENS: a second copy of the page, scaled and offset so the point under the lens is centered. */
+let lx=160,ly=120,lz=3;const lens=$('#lens'),lf=$('#lf'),ov=$('#ov');
+function lensSync(){const on=$('#ln').checked;lens.hidden=ov.hidden=!on;if(!on)return;const z=+zm.value/100;
+ if(lf.srcdoc!==SRC[$('#src').value])lf.srcdoc=SRC[$('#src').value];
+ lens.style.left=(lx-80)+'px';lens.style.top=(ly-80)+'px';
+ lf.style.cssText='width:'+fr.style.width+';height:'+fr.style.height+';transform:translate('+(80-lx*lz)+'px,'+(80-ly*lz)+'px) scale('+z*lz+');transform-origin:0 0;'+(fr.style.filter?'filter:'+fr.style.filter:'')}
+$('#ln').onchange=()=>{lensSync();if($('#ln').checked)ov.focus()};
+ov.onmousemove=e=>{lx=e.offsetX;ly=e.offsetY;lensSync()};
+ov.onkeydown=e=>{const m={ArrowLeft:[-20,0],ArrowRight:[20,0],ArrowUp:[0,-20],ArrowDown:[0,20]}[e.key];
+ if(m){e.preventDefault();lx=Math.max(0,lx+m[0]);ly=Math.max(0,ly+m[1])}else if(e.key==='+'||e.key==='='){e.preventDefault();lz=Math.min(6,lz+.5)}else if(e.key==='-'){e.preventDefault();lz=Math.max(1.5,lz-.5)}else return;lensSync()};
+
+/* ===== PAGE SCANNER: loads each sample off-screen so computed styles exist even when its tab is hidden ===== */
+function withDoc(h){return new Promise(r=>{const f=document.createElement('iframe');f.setAttribute('aria-hidden','true');f.tabIndex=-1;f.title='scan';f.style.cssText='position:absolute;left:-9999px;width:800px;height:600px';f.onload=()=>r([f,f.contentDocument]);f.srcdoc=h;document.body.append(f)})}
+const nums=s=>(s.match(/[\d.]+/g)||[]).map(Number);
+function effBg(el,w){for(;el;el=el.parentElement){const n=nums(w.getComputedStyle(el).backgroundColor);if(n.length<4||n[3]>0)return n.slice(0,3)}return[255,255,255]}
+$('#sc').onclick=async()=>{const out=[];
+ for(const[n,h]of Object.entries(SRC)){const[f,d]=await withDoc(h),w=d.defaultView;
+  $$('body *',d).forEach(el=>{if(![...el.childNodes].some(x=>x.nodeType===3&&x.textContent.trim()))return;const cs=w.getComputedStyle(el),fg=nums(cs.color).slice(0,3),bg=effBg(el,w);
+   const r=ratio(fg,bg),sz=parseFloat(cs.fontSize),big=sz>=24||(+cs.fontWeight>=700&&sz>=18.66),q=big?3:4.5;
+   if(r<q){const s=sug(fg,bg,q);out.push('<tr><td>'+n+'</td><td>&lt;'+el.tagName.toLowerCase()+'&gt; '+el.textContent.trim().slice(0,24).replace(/</g,'&lt;')+'</td><td>'+toHex(fg)+' on '+toHex(bg)+'</td><td>'+fl2(r)+':1</td><td>'+q+':1</td><td>'+(s?'Use '+toHex(s):'Change background')+'</td></tr>')}});f.remove()}
+ $('#sres').innerHTML=out.length?'<table><caption>'+out.length+' failing text element(s)</caption><thead><tr><th scope="col">Page</th><th scope="col">Element</th><th scope="col">Colors</th><th scope="col">Ratio</th><th scope="col">Required</th><th scope="col">Suggested fix</th></tr></thead><tbody>'+out.join('')+'</tbody></table>':'No failing text found.'};
+
+/* ===== MODULE 3: views + issue tracker (WCAG 2.1 criteria only) ===== */
+$$('input[name=vw]').forEach(r=>r.onchange=()=>{const v=$('input[name=vw]:checked').value;$('#wb').hidden=v==='a';$('#wa').hidden=v==='b'});
+/* title|SC|name|level|users|detect|fix|before|after */
+const IS=[
+'Low-contrast text|1.4.3|Contrast (Minimum)|AA|Low-vision users|Contrast checker or the Module 2 scanner|Use at least 4.5:1, e.g. #1a1a1a on #fff|color:#aaa|color:#1a1a1a',
+'Low-contrast input borders|1.4.11|Non-text Contrast|AA|Low-vision users|Measure border against background (3:1)|Darker, thicker border|border:1px solid #ddd|border:2px solid #595959',
+'Informative image has no alt|1.1.1|Non-text Content|A|Blind users|axe image-alt; listen with a screen reader|Add concise alt text|<img src="hero.png">|<img src="hero.png" alt="Summer shoes on a beach">',
+'Decorative image not hidden|1.1.1|Non-text Content|A|Screen reader users|File names read aloud|Empty alt|<img alt="decor-line-1.png">|<img alt="">',
+'Clickable div, no keyboard or role|2.1.1|Keyboard|A|Keyboard and switch users|Tab to it; press Enter|Use a real button|<div class="card">Shoes</div>|<button type="button">Add Shoes to cart</button>',
+'Placeholder-only labels|3.3.2|Labels or Instructions|A|Cognitive and screen reader users|Type text: the label disappears|Visible label tied with for/id|<input placeholder="Email">|<label for="em">Email</label><input id="em">',
+'Color-only error indication|1.4.1|Use of Color|A|Color-blind users|Grayscale or color-blind filter|Add text and icon, aria-invalid|border:1px solid red|<span id="eme">⚠ Error: enter a valid email</span>',
+'No visible focus indicator|2.4.7|Focus Visible|AA|Keyboard users|Tab through the page|Provide a strong focus style|*:focus{outline:none}|:focus-visible{outline:3px solid #0b5cad}',
+'Positive tabindex values|2.4.3|Focus Order|A|Keyboard and screen reader users|Tab: order jumps around|Follow DOM order; only 0 or -1|<input tabindex="3">|<input>',
+'Missing page language|3.1.1|Language of Page|A|Screen reader users|Inspect the html element|Set lang|<html>|<html lang="en">',
+'Non-descriptive link text|2.4.4|Link Purpose (In Context)|A|Screen reader users|Open the links list|Describe the destination|<a href="#">click here</a>|<a href="#offers">View summer sale offers</a>',
+'Skipped heading levels|1.3.1|Info and Relationships|A|Screen reader users|Headings outline|Use sequential levels|<h1>…</h1><h4>|<h1>…</h1><h2>',
+'Keyboard trap|2.1.2|No Keyboard Trap|A|Keyboard users|Tab into the promo field|Never block Tab|keydown: Tab → preventDefault()|(no handler)',
+'Auto-updating content, no pause|2.2.2|Pause, Stop, Hide|A|Cognitive and low-vision users|Watch for 5+ seconds|Provide a pause control|setInterval(update,2000)|<button aria-pressed="false">Pause offers</button>',
+'Icon-only button without name|4.1.2|Name, Role, Value|A|Screen reader and voice users|Reader says only "button"|aria-label; hide the icon|<button><svg>…</svg></button>|<button aria-label="Open cart"><svg aria-hidden="true">…</svg></button>',
+'Table without headers|1.3.1|Info and Relationships|A|Screen reader users|Table navigation shows no headers|caption and th scope|<td>Item</td><td>Price</td>|<caption>Prices</caption><th scope="col">Item</th>',
+'Fixed pixel width breaks reflow|1.4.10|Reflow|AA|Low-vision users on zoom|320px width test in Module 2|Fluid width|body{width:600px}|body{max-width:100%}',
+'Fixed pixel font sizes|1.4.4|Resize Text|AA|Low-vision users|Zoom text 200%|Relative units (rem)|font:12px Arial|font:1rem Arial',
+'Fixed-height clipping|1.4.12|Text Spacing|AA|Dyslexic and low-vision users|Text-spacing test in Module 2|min-height instead of height|height:40px;overflow:hidden|min-height:4rem',
+'Status message not announced|4.1.3|Status Messages|AA|Blind users|Submit with a screen reader: silence|role="status" container|<div id="m"></div>|<div id="m" role="status"></div>',
+'Missing page title|2.4.2|Page Titled|A|Screen reader and tab users|Check the tab title|Add a unique title|<head>…</head>|<title>ShopCo – Summer Sale</title>'].map(s=>s.split('|'));
+const found=new Set(),fixed=new Set(),esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+$('#iss').innerHTML=IS.map((x,i)=>'<details><summary>'+(i+1)+'. '+esc(x[0])+' — SC '+x[1]+' ('+x[3]+')</summary><p><strong>SC '+x[1]+' '+x[2]+'</strong>, level '+x[3]+'. <strong>Affects:</strong> '+x[4]+'.</p><p><strong>Detect:</strong> '+x[5]+'.</p><p><strong>Fix:</strong> '+x[6]+'.</p><p>Before:</p><pre>'+esc(x[7])+'</pre><p>After:</p><pre>'+esc(x[8])+'</pre><label><input type="checkbox" data-f="'+i+'"> Found</label> <label><input type="checkbox" data-x="'+i+'"> Fixed</label></details>').join('');
+function prog(){$('#prog').textContent='Found '+found.size+' of '+IS.length+' issues; fixed '+fixed.size+' of '+IS.length+'.'}prog();
+$('#iss').onchange=e=>{const t=e.target;if(t.dataset.f!==undefined)t.checked?found.add(+t.dataset.f):found.delete(+t.dataset.f);if(t.dataset.x!==undefined)t.checked?fixed.add(+t.dataset.x):fixed.delete(+t.dataset.x);prog()};
+
+/* ===== MODULE 4: checklist + report ===== */
+const CK=[['Perceivable','1.1.1','Non-text Content','A'],['Perceivable','1.3.1','Info and Relationships','A'],['Perceivable','1.4.1','Use of Color','A'],['Perceivable','1.4.3','Contrast (Minimum)','AA'],['Perceivable','1.4.4','Resize Text','AA'],['Perceivable','1.4.10','Reflow','AA'],['Perceivable','1.4.11','Non-text Contrast','AA'],['Perceivable','1.4.12','Text Spacing','AA'],
+['Operable','2.1.1','Keyboard','A'],['Operable','2.1.2','No Keyboard Trap','A'],['Operable','2.2.2','Pause, Stop, Hide','A'],['Operable','2.4.1','Bypass Blocks','A'],['Operable','2.4.3','Focus Order','A'],['Operable','2.4.4','Link Purpose (In Context)','A'],['Operable','2.4.7','Focus Visible','AA'],
+['Understandable','3.1.1','Language of Page','A'],['Understandable','3.3.1','Error Identification','A'],['Understandable','3.3.2','Labels or Instructions','A'],
+['Robust','4.1.2','Name, Role, Value','A'],['Robust','4.1.3','Status Messages','AA']];
+let ch='',cp='';CK.forEach((c,i)=>{if(c[0]!==cp){if(cp)ch+='</section>';ch+='<section><h3>'+c[0]+'</h3>';cp=c[0]}
+ ch+='<fieldset><legend>SC '+c[1]+' '+c[2]+' (Level '+c[3]+')</legend>'+['pass','fail','na'].map(v=>'<label><input type="radio" name="c'+i+'" value="'+v+'"> '+{pass:'Pass',fail:'Fail',na:'Not applicable'}[v]+'</label> ').join('')+'<label>Notes <input id="n'+i+'" size="30"></label></fieldset>'});
+$('#ck').innerHTML=ch+'</section>';
+let rtxt='';
+$('#gr').onclick=()=>{const P={},T={pass:0,fail:0,na:0,un:0},F=[];
+ CK.forEach((c,i)=>{const r=$('input[name=c'+i+']:checked'),v=r?r.value:'un';T[v]++;const p=P[c[0]]||(P[c[0]]={pass:0,fail:0});if(v==='pass'||v==='fail')p[v]++;if(v==='fail')F.push('SC '+c[1]+' '+c[2]+': '+($('#n'+i).value||'(no notes)'))});
+ const L=['A11y Lab audit report','Items: '+CK.length+' | Pass: '+T.pass+' | Fail: '+T.fail+' | N/A: '+T.na+' | Not tested: '+T.un,'','Pass rate by principle (pass / tested):'];
+ Object.entries(P).forEach(([k,v])=>L.push('- '+k+': '+(v.pass+v.fail?Math.round(100*v.pass/(v.pass+v.fail))+'%':'not tested')+' ('+v.pass+'/'+(v.pass+v.fail)+')'));
+ L.push('','Failed items:');F.length?F.forEach(f=>L.push('- '+f)):L.push('- None recorded');
+ L.push('','Note: manual and assistive-technology testing is required; automated tools find only part of the issues.');
+ rtxt=L.join('\n');const r=$('#rep');r.innerHTML='<h3>Report</h3><div style="white-space:pre-wrap"></div>';r.lastChild.textContent=rtxt};
+$('#cp').onclick=async()=>{$('#gr').click();try{await navigator.clipboard.writeText(rtxt);say('Report copied to clipboard')}catch(e){say('Copy failed. Select the report text and copy manually.')}};
+$('#pr').onclick=()=>{$('#gr').click();print()};
+
+/* Browser-only learning state. Never persist names/emails from demo forms. */
+const STORAGE_KEY = 'a11y-lab-progress-v1';
+function setTheme(value) {
+ $('#theme').value = value;
+ if (value === 'auto') document.documentElement.removeAttribute('data-theme');
+ else document.documentElement.setAttribute('data-theme', value);
+}
+function saveProgress() {
+ const checklist = CK.map((_, i) => ({
+  result: $('input[name=c' + i + ']:checked')?.value || '',
+  notes: $('#n' + i).value
+ }));
+ try {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({
+   theme: $('#theme').value, found: [...found], fixed: [...fixed], checklist
+  }));
+ } catch {
+  $('#save-note').textContent = 'Browser storage is unavailable. Progress will last only until this page is closed or reloaded.';
+ }
+}
+function restoreProgress() {
+ try {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return;
+  const state = JSON.parse(raw);
+  if (!state || typeof state !== 'object') return;
+  if (['auto', 'light', 'dark', 'hc'].includes(state.theme)) setTheme(state.theme);
+  for (const [key, values] of [['f', state.found], ['x', state.fixed]]) {
+   if (!Array.isArray(values)) continue;
+   for (const i of values) {
+    if (!Number.isInteger(i) || i < 0 || i >= IS.length) continue;
+    (key === 'f' ? found : fixed).add(i);
+    $('[data-' + key + '="' + i + '"]').checked = true;
+   }
+  }
+  if (Array.isArray(state.checklist)) state.checklist.slice(0, CK.length).forEach((item, i) => {
+   if (!item || typeof item !== 'object') return;
+   if (['pass', 'fail', 'na'].includes(item.result))
+    $('input[name=c' + i + '][value=' + item.result + ']').checked = true;
+   if (typeof item.notes === 'string') $('#n' + i).value = item.notes;
+  });
+  prog();
+ } catch {
+  $('#save-note').textContent = 'Saved progress could not be loaded. You can continue using the lab.';
+ }
+}
+restoreProgress();
+$('#theme').addEventListener('change', saveProgress);
+$('#iss').addEventListener('change', saveProgress);
+$('#ck').addEventListener('input', () => { rtxt = ''; $('#rep').textContent = ''; saveProgress(); });
+$('#reset-progress').onclick = () => {
+ if (!confirm('Clear your saved issue tracking, audit answers, and notes?')) return;
+ found.clear(); fixed.clear();
+ $$('#iss input').forEach(input => { input.checked = false; });
+ $$('#ck input').forEach(input => {
+  if (input.type === 'radio') input.checked = false;
+  else input.value = '';
+ });
+ rtxt = ''; $('#rep').textContent = ''; prog(); saveProgress();
+ say('Learning progress and audit notes cleared.');
+};
+</script>
+</body>
+</html>
